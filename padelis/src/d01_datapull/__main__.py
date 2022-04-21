@@ -1,9 +1,17 @@
 import os
+from re import L
 import sys
+
+from matplotlib.font_manager import json_dump
+from requests import head
 from pull import osqueeth_data, eth_data
+import laevitasapi
+
+from datetime import date
+import pandas as pd 
 
 
-def main(api_key, uniswap_pool_adress_params, osqueeth_params, data_save_file):
+def main(api_key, uniswap_pool_adress_params, osqueeth_params, data_save_file, json_dump_save_file, df_save_file, url, headers, pull_data_bool) :
 
     uniswap_pool_endpoint = 'https://api.covalenthq.com/v1/1/uniswap_v3/swaps/address/{_address}/?quote-currency={_quote_currency}&format={_format}&page-number={_page_number}&page-size={_pag_size}&key={_key}'.format(
         _address=uniswap_pool_adress_params['osqueeth_pool_address'],
@@ -35,10 +43,26 @@ def main(api_key, uniswap_pool_adress_params, osqueeth_params, data_save_file):
     #Data for the past year 
 
     #for OSQUEETH I assume I am also getting 1 value per day 
-    osqueeth_data(api_key, uniswap_pool_endpoint, osqueeth_historical_price_endpoint, data_save_file)
+
+    # osqueeth_data(api_key, uniswap_pool_endpoint, osqueeth_historical_price_endpoint, data_save_file)
 
     #for ETH data I am getting the closing $ of WETH so 1 value per day 
-    eth_data(api_key, uniswap_pool_endpoint, eth_historical_price_endpoint, data_save_file)
+
+    # eth_data(api_key, uniswap_pool_endpoint, eth_historical_price_endpoint, data_save_file)
+
+
+    # LAEVITAS API PULL 
+
+    # df = laevitasapi.pull(url, headers, start_date, end_date, json_dump_save_file, df_save_file) 
+
+    # print(df)
+
+    if pull_data_bool: 
+        df = laevitasapi.pull_iterate(headers, start_date, end_date, json_dump_save_file, df_save_file) 
+    else: 
+        df = pd.read_pickle(df_save_file)
+
+    print(df) 
 
 
 if __name__ == "__main__":
@@ -70,4 +94,45 @@ if __name__ == "__main__":
     except:
         data_save_file = './data/'
 
-    main(api_key, uniswap_pool_adress_params, osqueeth_params, data_save_file)
+
+    # headers = {'Content-Type':'application/json','apiKey':'1fbff1af-511c-4855-b01f-b1ada2ab3941'}
+
+    try: 
+        start_date = sys.argv[5]
+    except:  # '2022-02-27' --> first day of data 
+        start_date = '2022-02-27'
+    
+    try: 
+        end_date = sys.argv[6]
+    except: 
+        end_date= str(date.today())
+
+    try: 
+        url = sys.argv[7]
+    except: 
+        url = 'https://gateway.laevitas.ch/historical/power_perp/squeeth/eth?start='+start_date+'&end='+end_date
+
+    try: 
+        json_dump_savefile = sys.argv[8]
+    except: 
+        json_dump_save_file = data_save_file+'historical.json'
+
+    try: 
+        df_save_file = sys.argv[9]
+    except: 
+        df_save_file = data_save_file+'historical.pickle'
+    
+    try: 
+        headers = sys.argv[10]
+    except: 
+        headers = {'Content-Type':'application/json','apiKey':'1fbff1af-511c-4855-b01f-b1ada2ab3941'}
+
+    try: 
+        pull_data_bool = sys.argv[11]
+    except: 
+        pull_data_bool = False 
+
+    
+
+
+    main(api_key, uniswap_pool_adress_params, osqueeth_params, data_save_file, json_dump_save_file, df_save_file, url, headers, pull_data_bool) 
