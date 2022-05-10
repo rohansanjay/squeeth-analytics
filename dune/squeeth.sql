@@ -69,7 +69,7 @@ ETH_PRICES as (
         d."contract_address"
     from dex."view_token_prices" d
     left join erc20.tokens e on d.contract_address = e.contract_address
-    WHERE symbol = 'ETH'
+    WHERE symbol = 'ETH' and d.contract_address = '\x0000000000000000000000000000000000000000'
     
     and hour > '2022-01-11 06:00'
 ),
